@@ -52,12 +52,18 @@ services:
 
   backend:
     image: swarm-demo-backend:latest
-    environment:
-      POSTGRES_DB: "appdb"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "secret-password"
-      SERVICE_NAME: "backend"
-      GPU_NODE: "false"
+    configs:
+      - source: pg_db_name
+        target: /run/configs/pg_db_name
+      - source: pg_db_user
+        target: /run/configs/pg_db_user
+      - source: backend_service_name
+        target: /run/configs/backend_service_name
+      - source: backend_gpu_node
+        target: /run/configs/backend_gpu_node
+    secrets:
+      - source: pg_password
+        target: pg_password
     networks:
       - public
       - app_net
@@ -70,13 +76,15 @@ services:
         - traefik.http.routers.backend.priority=100
         - traefik.http.services.backend.loadbalancer.server.port=8000
 
-
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: appdb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret-password
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - source: pg_password
+        target: pg_password
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
@@ -84,13 +92,27 @@ services:
 
 networks:
   public:
-    name: "demo_public"
+    name: demo_public
     driver: overlay
     attachable: true
   app_net:
-    name: "demo_app_net"
+    name: demo_app_net
     driver: overlay
     attachable: true
 
 volumes:
   pg_data:
+
+configs:
+  pg_db_name:
+    external: true
+  pg_db_user:
+    external: true
+  backend_service_name:
+    external: true
+  backend_gpu_node:
+    external: true
+
+secrets:
+  pg_password:
+    external: true

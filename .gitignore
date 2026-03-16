@@ -1,0 +1,4 @@
+/registry-simple/auth/**
+/registry-simple/data/**
+!/registry-simple/auth/.gitkeep
+!/registry-simple/data/.gitkeep
