@@ -20,5 +20,8 @@ async def run_heavy_job(seconds: int) -> dict:
         "backend_hostname": HOSTNAME,
         "seconds": seconds,
         "iterations": iterations,
-        "resource_hint": "Для демонстрации limits/reservations попробуйте нагрузить процессор на 5-10 секунд и наблюдайте docker stats / top / htop",
+        "resource_hint": (
+            "Для демонстрации limits/reservations попробуйте нагрузить процессор "
+            "на 5-10 секунд и наблюдайте docker stats / top / htop"
+        ),
     }

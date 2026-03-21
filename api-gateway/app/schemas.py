@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +8,7 @@ class ItemIn(BaseModel):
 class ItemOut(BaseModel):
     id: int
     text: str
-    created_at: datetime
+    created_at: str
 
 
 class ItemsListResponse(BaseModel):
@@ -31,10 +29,27 @@ class HealthResponse(BaseModel):
 class InfoResponse(BaseModel):
     service: str
     hostname: str
-    db_status: str
     timestamp: str
 
-#service schemas
+
+class ServiceInfoResponse(BaseModel):
+    status: str
+    hostname: str
+
+
+class DataServiceInfoResponse(BaseModel):
+    status: str
+    hostname: str
+    db_status: str
+
+
+class ServicesInfoResponse(BaseModel):
+    service: str
+    hostname: str
+    timestamp: str
+    upstreams: dict[str, dict]
+
+
 class MlProxyResponse(BaseModel):
     backend_hostname: str
     score: float
@@ -48,6 +63,7 @@ class HeavyResponse(BaseModel):
     seconds: int
     iterations: int
     resource_hint: str
+
 
 class MemoryResponse(BaseModel):
     status: str

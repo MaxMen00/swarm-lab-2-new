@@ -63,13 +63,8 @@ POSTGRES_PORT = int(
 
 SERVICE_NAME = read_value(
     env_name="SERVICE_NAME",
-    default="backend",
+    default="data-service",
 )
-
-GPU_NODE = read_value(
-    env_name="GPU_NODE",
-    default="false",
-).lower() == "true"
 
 HOSTNAME = read_value(
     env_name="HOSTNAME",

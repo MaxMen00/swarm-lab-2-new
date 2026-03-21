@@ -3,16 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import close_db_pool, create_db_pool, wait_for_db_and_init
+from app.config import SERVICE_NAME
+from app.db import close_db_pool, create_db_pool_with_retry, init_db
 from app.routers.items import router as items_router
 from app.routers.system import router as system_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pool = await create_db_pool()
+    pool = await create_db_pool_with_retry()
     app.state.db_pool = pool
-    app.state.db_ready = await wait_for_db_and_init(pool)
+    app.state.db_ready = await init_db(pool)
 
     try:
         yield
@@ -20,13 +21,7 @@ async def lifespan(app: FastAPI):
         await close_db_pool(pool)
 
 
-app = FastAPI(
-    title="swarm-demo-backend",
-    lifespan=lifespan,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
-)
+app = FastAPI(title=SERVICE_NAME, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

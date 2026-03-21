@@ -1,3 +1,4 @@
+import asyncio
 import math
 import threading
 import time
@@ -20,10 +21,11 @@ def thread_worker(seconds: int) -> int:
 async def run_thread_job(threads: int, seconds: int) -> dict:
     start_threads = threading.active_count()
 
+    loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        futures = [executor.submit(thread_worker, seconds) for _ in range(threads)]
-        iterations = sum(f.result() for f in futures)
-
+        futures = [loop.run_in_executor(executor, thread_worker, seconds) for _ in range(threads)]
+        #futures = [executor.submit(thread_worker, seconds) for _ in range(threads)] блокирует event loop, т.к f.result() - синхронный вызов
+        results = await asyncio.gather(*futures)
     end_threads = threading.active_count()
 
     return {
@@ -31,8 +33,11 @@ async def run_thread_job(threads: int, seconds: int) -> dict:
         "backend_hostname": HOSTNAME,
         "threads_requested": threads,
         "seconds": seconds,
-        "iterations": iterations,
+        "iterations": sum(results),
         "threads_before": start_threads,
         "threads_after": end_threads,
-        "resource_hint": "Для демонстрации scheduler/thread pressure попробуйте 50-300 потоков и наблюдайте docker stats / top / htop",
+        "resource_hint": (
+            "Для демонстрации scheduler/thread pressure попробуйте 50-300 потоков "
+            "и наблюдайте docker stats / top / htop"
+        ),
     }

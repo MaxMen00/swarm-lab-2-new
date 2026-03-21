@@ -38,7 +38,7 @@ services:
         - traefik.http.services.dummy-svc.loadbalancer.server.port=9999
 
   frontend:
-    image: swarm-demo-frontend:latest
+    image: registry.local:5000/swarm-demo-frontend:0.0.1
     networks:
       - public
     deploy:
@@ -50,59 +50,39 @@ services:
         - traefik.http.routers.frontend.priority=1
         - traefik.http.services.frontend.loadbalancer.server.port=80
 
-  api-gateway:
-    image: swarm-demo-api-gateway:latest
-    environment:
-      SERVICE_NAME: api-gateway
-      DATA_SERVICE_URL: http://data-service:8000
-      LOAD_SERVICE_URL: http://load-service:8000
-      ML_SERVICE_URL: http://ml-service:8000
-      HTTP_TIMEOUT_SECONDS: 15
-    networks:
-      - public
-      - app_net
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.swarm.network=demo_public
-        - traefik.http.routers.api-gateway.rule=PathPrefix(`/api`) || PathPrefix(`/health`)
-        - traefik.http.routers.api-gateway.entrypoints=web
-        - traefik.http.routers.api-gateway.priority=100
-        - traefik.http.services.api-gateway.loadbalancer.server.port=8000
-
-  load-service:
-    image: swarm-demo-load-service:latest
-    environment:
-      SERVICE_NAME: load-service
-    networks:
-      - app_net
-    deploy:
-      replicas: 1
-
-  ml-service:
-    image: swarm-demo-ml-service:latest
-    environment:
-      SERVICE_NAME: ml-service
-    networks:
-      - app_net
-    deploy:
-      replicas: 1
-
-  data-service:
-    image: swarm-demo-data-service:latest
+  backend:
+    image: registry.local:5000/swarm-demo-backend:0.0.2
     configs:
       - source: pg_db_name
         target: /run/configs/pg_db_name
       - source: pg_db_user
         target: /run/configs/pg_db_user
+      - source: backend_service_name
+        target: /run/configs/backend_service_name
+      - source: backend_gpu_node
+        target: /run/configs/backend_gpu_node
     secrets:
       - source: pg_password
         target: pg_password
     networks:
+      - public
       - app_net
     deploy:
-      replicas: 1
-
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=demo_public
+        - traefik.http.routers.backend.rule=PathPrefix(`/api`)
+        - traefik.http.routers.backend.entrypoints=web
+        - traefik.http.routers.backend.priority=100
+        - traefik.http.services.backend.loadbalancer.server.port=8000
 
   db:
     image: postgres:16-alpine
@@ -117,14 +97,18 @@ services:
       - pg_data:/var/lib/postgresql/data
     networks:
       - app_net
+    deploy:
+      placement:
+        constraints:
+          - node.labels.db == true
 
 networks:
   public:
-    name: demo_public
+    name: "demo_public"
     driver: overlay
     attachable: true
   app_net:
-    name: demo_app_net
+    name: "demo_app_net"
     driver: overlay
     attachable: true
 
@@ -135,6 +119,10 @@ configs:
   pg_db_name:
     external: true
   pg_db_user:
+    external: true
+  backend_service_name:
+    external: true
+  backend_gpu_node:
     external: true
 
 secrets:

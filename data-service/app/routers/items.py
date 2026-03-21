@@ -8,7 +8,7 @@ from app.schemas import CreateItemResponse, ItemIn, ItemsListResponse
 router = APIRouter(tags=["items"])
 
 
-@router.get("/api/items", response_model=ItemsListResponse)
+@router.get("/items", response_model=ItemsListResponse)
 async def get_items(conn: asyncpg.Connection = Depends(get_db_conn)):
     try:
         rows = await conn.fetch(
@@ -33,7 +33,7 @@ async def get_items(conn: asyncpg.Connection = Depends(get_db_conn)):
         raise HTTPException(status_code=500, detail=f"DB error: {e}") from e
 
 
-@router.post("/api/items", response_model=CreateItemResponse)
+@router.post("/items", response_model=CreateItemResponse)
 async def create_item(
     item: ItemIn,
     conn: asyncpg.Connection = Depends(get_db_conn),

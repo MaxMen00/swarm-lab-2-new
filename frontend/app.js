@@ -21,6 +21,47 @@ function renderInfo(data) {
     `;
 }
 
+function renderServicesInfo(data) {
+    const upstreams = data.upstreams || {};
+
+    const renderUpstream = (name, serviceData) => {
+        if (!serviceData) {
+            return `
+                <div class="border rounded p-2 mb-2">
+                    <div><strong>${name}</strong></div>
+                    <div class="text-muted small">Нет данных</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="border rounded p-2 mb-2">
+                <div><strong>${name}</strong></div>
+                <div><strong>status:</strong> <code>${serviceData.status ?? '-'}</code></div>
+                <div><strong>hostname:</strong> <code>${serviceData.hostname ?? '-'}</code></div>
+                ${serviceData.db_status !== undefined
+                ? `<div><strong>db_status:</strong> <code>${serviceData.db_status}</code></div>`
+                : ''
+            }
+            </div>
+        `;
+    };
+
+    document.getElementById('servicesInfoBox').innerHTML = `
+        <div class="mb-3">
+            <div><strong>service:</strong> <code>${data.service}</code></div>
+            <div><strong>hostname:</strong> <code>${data.hostname}</code></div>
+            <div><strong>time:</strong> <code>${data.timestamp}</code></div>
+        </div>
+
+        <div>
+            ${renderUpstream('data-service', upstreams['data-service'])}
+            ${renderUpstream('load-service', upstreams['load-service'])}
+            ${renderUpstream('ml-service', upstreams['ml-service'])}
+        </div>
+    `;
+}
+
 function renderItems(data) {
     document.getElementById('itemsReplica').innerText = `backend: ${data.backend_hostname}`;
 
@@ -45,6 +86,11 @@ function renderItems(data) {
 async function loadInfo() {
     const data = await api('/api/info');
     renderInfo(data);
+}
+
+async function loadServicesInfo() {
+    const data = await api('/api/info/services');
+    renderServicesInfo(data);
 }
 
 async function loadItems() {
@@ -149,9 +195,13 @@ async function addItem(evt) {
 
 async function loadAll() {
     try {
-        await Promise.all([loadInfo(), loadItems()]);
+        await Promise.all([loadInfo(), loadServicesInfo(), loadItems()]);
     } catch (error) {
         document.getElementById('infoBox').textContent = `Ошибка загрузки: ${error.message}`;
+        const servicesInfoBox = document.getElementById('servicesInfoBox');
+        if (servicesInfoBox) {
+            servicesInfoBox.textContent = `Ошибка загрузки: ${error.message}`;
+        }
         document.getElementById('itemsBox').textContent = `Ошибка загрузки: ${error.message}`;
     }
 }

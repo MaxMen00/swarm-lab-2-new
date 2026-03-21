@@ -22,5 +22,8 @@ async def run_memory_job(megabytes: int, hold_seconds: int, chunk_mb: int = 10) 
         "requested_mb": megabytes,
         "allocated_mb": allocated_mb,
         "hold_seconds": hold_seconds,
-        "resource_hint": "Для демонстрации memory limits попробуйте 256-2048 mb и наблюдайте docker stats / top / htop",
+        "resource_hint": (
+            "Для демонстрации memory limits попробуйте 256-2048 mb "
+            "и наблюдайте docker stats / top / htop"
+        ),
     }

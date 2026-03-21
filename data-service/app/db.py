@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS items (
 async def create_db_pool() -> asyncpg.Pool:
     return await asyncpg.create_pool(
         user=POSTGRES_USER,
-        password=POSTGRES_PASSWORD,
+        password=POSTGRES_PASSWORD or None,
         database=POSTGRES_DB,
         host=POSTGRES_HOST,
         port=POSTGRES_PORT,
@@ -39,22 +39,35 @@ async def create_db_pool() -> asyncpg.Pool:
     )
 
 
+async def create_db_pool_with_retry() -> asyncpg.Pool:
+    last_error: Exception | None = None
+
+    for attempt in range(1, DB_INIT_RETRIES + 1):
+        try:
+            return await create_db_pool()
+        except Exception as exc:
+            last_error = exc
+            if attempt == DB_INIT_RETRIES:
+                break
+            await asyncio.sleep(DB_INIT_DELAY_SECONDS)
+
+    raise RuntimeError(
+        f"Could not create DB pool after {DB_INIT_RETRIES} attempts: {last_error}"
+    )
+
+
 async def close_db_pool(pool: asyncpg.Pool | None) -> None:
     if pool is not None:
         await pool.close()
 
 
-async def wait_for_db_and_init(pool: asyncpg.Pool) -> bool:
-    for attempt in range(1, DB_INIT_RETRIES + 1):
-        try:
-            async with pool.acquire() as conn:
-                await conn.execute(CREATE_ITEMS_TABLE_SQL)
-            return True
-        except Exception:
-            if attempt == DB_INIT_RETRIES:
-                return False
-            await asyncio.sleep(DB_INIT_DELAY_SECONDS)
-    return False
+async def init_db(pool: asyncpg.Pool) -> bool:
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(CREATE_ITEMS_TABLE_SQL)
+        return True
+    except Exception:
+        return False
 
 
 def get_db_pool(app: FastAPI) -> asyncpg.Pool:

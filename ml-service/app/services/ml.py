@@ -5,7 +5,7 @@ from app.config import GPU_NODE, HOSTNAME
 
 async def calculate_ml_score(x: float) -> dict:
 
-    outer_iterations = 180
+    outer_iterations = 90 if GPU_NODE else 180
     inner_iterations = 45_000
 
     base = abs(x) + 1.0
@@ -33,7 +33,6 @@ async def calculate_ml_score(x: float) -> dict:
             inv2 = 1.0 / (fi ** 1.11)
             inv3 = 1.0 / (fi ** 1.15)
 
-            # Несколько осциллирующих и нелинейных компонент
             s1 = math.sin(x / (sqrt_i + 1.0) + log_i * 0.7 + outer_f)
             c1 = math.cos(x * 0.00021 * fi + shift / (sqrt_i + 1.0))
             s2 = math.sin((base + log_i) / (fi ** 0.23) + outer_f * 0.17)
@@ -47,7 +46,6 @@ async def calculate_ml_score(x: float) -> dict:
             acc2 += mix2 * inv2
             acc3 += mix3 * inv3
 
-        # Тяжелое нелинейное смешивание после каждого внешнего цикла
         block = (
             math.tanh(acc1 * 2.7)
             + math.sin(acc2 * 3.1)
@@ -61,7 +59,6 @@ async def calculate_ml_score(x: float) -> dict:
         total_3 += (acc2 - acc3) / (outer_f ** 0.9)
         total_4 += math.sin(block + acc1 + acc3) / outer_f
 
-    # Финальный этап: еще одно дорогое преобразование
     final_raw = (
         math.tanh(total_1)
         + math.sin(total_2 * 0.0008)
@@ -70,12 +67,14 @@ async def calculate_ml_score(x: float) -> dict:
         + math.sin((total_1 + total_2 + total_3 + total_4) * 0.002)
     )
 
-    # Стабильная нормализация к диапазону 0..100
     score = round((math.tanh(final_raw) + 1) * 50, 3)
 
     return {
         "backend_hostname": HOSTNAME,
         "score": score,
         "gpu_node": GPU_NODE,
-        "explanation": "Сейчас score вычисляется через  тяжелую CPU-bound детерминированную математику в backend, чтобы наглядно показать выигрыш от кэширования.",
+        "explanation": (
+            "Сейчас score вычисляется через тяжелую CPU-bound детерминированную "
+            "математику в ml-service, чтобы наглядно показать выигрыш от кэширования."
+        ),
     }
