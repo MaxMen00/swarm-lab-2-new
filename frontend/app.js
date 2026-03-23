@@ -107,6 +107,8 @@ async function runMl() {
         <div><strong>backend:</strong> <code>${data.backend_hostname}</code></div>
         <div><strong>gpu_node:</strong> <code>${data.gpu_node}</code></div>
         <div><strong>explanation:</strong> ${data.explanation}</div>
+        <div><strong>cache_hit:</strong> ${data.cache_hit}</div>
+        <div><strong>cache_key:</strong> ${data.cache_key}</div>
     `;
 }
 

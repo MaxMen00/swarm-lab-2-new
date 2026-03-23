@@ -53,6 +53,8 @@ async def ml_proxy(
         "score": response["score"],
         "gpu_node": response["gpu_node"],
         "explanation": response["explanation"],
+        "cache_hit": response["cache_hit"],
+        "cache_key": response["cache_key"],
     }
 
 

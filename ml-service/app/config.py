@@ -47,3 +47,45 @@ HOSTNAME = read_value(
     env_name="HOSTNAME",
     default="unknown"
 )
+
+REDIS_HOST = read_value(
+    file_path="/run/configs/redis_host",
+    env_name="REDIS_HOST",
+    default="redis",
+)
+
+REDIS_PORT = int(
+    read_value(
+        file_path="/run/configs/redis_port",
+        env_name="REDIS_PORT",
+        default="6379",
+    )
+)
+
+REDIS_DB = int(
+    read_value(
+        file_path="/run/configs/redis_db",
+        env_name="REDIS_DB",
+        default="0",
+    )
+)
+
+REDIS_CACHE_TTL_SECONDS = int(
+    read_value(
+        file_path="/run/configs/redis_cache_ttl_seconds",
+        env_name="REDIS_CACHE_TTL_SECONDS",
+        default="300",
+    )
+)
+
+REDIS_USERNAME = read_value(
+    file_path="/run/secrets/redis_app_username",
+    env_name="REDIS_USERNAME",
+    required=True
+)
+
+REDIS_APP_PASSWORD = read_value(
+    file_path="/run/secrets/redis_app_password",
+    env_name="REDIS_APP_PASSWORD",
+    required=True
+)

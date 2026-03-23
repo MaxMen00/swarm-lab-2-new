@@ -83,6 +83,13 @@ services:
     image: swarm-demo-ml-service:latest
     environment:
       SERVICE_NAME: ml-service
+      GPU_NODE: "true"
+    secrets:
+      - source: redis_app_password
+        target: redis_app_password
+      - source: redis_app_username
+        target: redis_app_username
+
     networks:
       - app_net
     deploy:
@@ -118,6 +125,36 @@ services:
     networks:
       - app_net
 
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app_net
+    volumes:
+      - redis_data:/data
+    configs:
+      - source: redis_conf
+        target: /usr/local/etc/redis/redis.conf
+    secrets:
+      - source: redis_app_password
+        target: redis_app_password
+      - source: redis_app_username
+        target: redis_app_username
+    command: >
+      sh -c '
+        set -eux
+        ls -l /run/secrets
+        APP_PASS="$$(cat /run/secrets/redis_app_password)"
+        echo "Password loaded"
+        APP_USERNAME="$$(cat /run/secrets/redis_app_username)"
+        echo "Secrets loaded"
+        printf "%s\n" \
+          "user default off" \
+          "user $$APP_USERNAME on >$$APP_PASS ~mlcache:* +get +set +del +expire +ttl +pttl +exists +ping" \
+          > /usr/local/etc/redis/users.acl
+        echo "Starting redis"
+        exec redis-server /usr/local/etc/redis/redis.conf
+      '
+
 networks:
   public:
     name: demo_public
@@ -130,13 +167,20 @@ networks:
 
 volumes:
   pg_data:
+  redis_data:
 
 configs:
   pg_db_name:
     external: true
   pg_db_user:
     external: true
+  redis_conf:
+    external: true
 
 secrets:
   pg_password:
+    external: true
+  redis_app_password:
+    external: true
+  redis_app_username:
     external: true

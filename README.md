@@ -24,6 +24,30 @@ echo "postgres" | docker config create pg_db_user -
 echo "secret-password" | docker secret create pg_password -
 ```
 
+## Секреты и конфиги для редиса
+
+```PowerShell
+docker config create redis_conf redis.conf
+```
+
+У меня на win-10 креды для редиса передавались некоректно из-за \r в конце секрета, нашел такой выход
+
+### Сначала создадим файлы секретов
+
+```PowerShell
+$app = "app"
+$pass = "secret-password"
+[System.IO.File]::WriteAllText("redis_app_username.txt", $app, [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText("redis_app_password.txt", $pass, [System.Text.UTF8Encoding]::new($false))
+```
+
+### Потом создадим из них секреты
+
+```PowerShell
+docker secret create redis_app_username redis_app_username.txt
+docker secret create redis_app_password redis_app_password.txt
+```
+
 ## Деплой в Swarm
 
 ```bash

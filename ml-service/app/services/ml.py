@@ -1,9 +1,19 @@
 import math
+import json
 
-from app.config import GPU_NODE, HOSTNAME
+import redis.asyncio as redis
 
+from app.config import (
+    GPU_NODE,
+    HOSTNAME,
+    REDIS_CACHE_TTL_SECONDS,
+)
 
-async def calculate_ml_score(x: float) -> dict:
+def build_cache_key(x: float) -> str:
+    normalized_x = f"{x:.6f}"
+    return f"mlcache:score:{normalized_x}"
+
+async def calculate_ml_score_sync(x: float) -> dict:
 
     outer_iterations = 90 if GPU_NODE else 180
     inner_iterations = 45_000
@@ -74,7 +84,32 @@ async def calculate_ml_score(x: float) -> dict:
         "score": score,
         "gpu_node": GPU_NODE,
         "explanation": (
-            "Сейчас score вычисляется через тяжелую CPU-bound детерминированную "
-            "математику в ml-service, чтобы наглядно показать выигрыш от кэширования."
+            "Теперь score вычисляется гораздо быстрее! "
         ),
     }
+
+
+async def calculate_ml_score(
+    x: float,
+    redis_client: redis.Redis,
+) -> dict:
+    cache_key = build_cache_key(x)
+
+    cached_value = await redis_client.get(cache_key)
+    if cached_value is not None:
+        payload = json.loads(cached_value)
+        payload["cache_hit"] = True
+        payload["cache_key"] = cache_key
+        return payload
+
+    payload = await calculate_ml_score_sync(x)
+
+    await redis_client.set(
+        cache_key,
+        json.dumps(payload),
+        ex=REDIS_CACHE_TTL_SECONDS,
+    )
+
+    payload["cache_hit"] = False
+    payload["cache_key"] = cache_key
+    return payload

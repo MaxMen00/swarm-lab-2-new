@@ -55,6 +55,8 @@ class MlProxyResponse(BaseModel):
     score: float
     gpu_node: bool
     explanation: str
+    cache_hit: bool
+    cache_key: str
 
 
 class HeavyResponse(BaseModel):

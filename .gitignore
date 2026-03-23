@@ -2,3 +2,7 @@
 /registry-simple/data/**
 !/registry-simple/auth/.gitkeep
 !/registry-simple/data/.gitkeep
+#version_5
+redis_app_password.txt
+redis_app_username.txt
+stack-1.yml

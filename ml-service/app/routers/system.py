@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 
 from app.schemas import HealthResponse, MlProxyResponse
 from app.services.ml import calculate_ml_score
@@ -14,5 +14,6 @@ async def health():
 
 
 @router.get("/score", response_model=MlProxyResponse)
-async def score(x: float = Query(..., description="Input value")):
-    return await calculate_ml_score(x)
+async def score(request: Request, x: float = Query(..., description="Input value")):
+    redis_client = request.app.state.redis_client
+    return await calculate_ml_score(x=x, redis_client=redis_client)
