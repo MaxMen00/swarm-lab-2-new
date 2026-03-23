@@ -38,10 +38,22 @@ services:
         - traefik.http.services.dummy-svc.loadbalancer.server.port=9999
 
   frontend:
-    image: swarm-demo-frontend:latest
+    image: swarm-demo-frontend:0.0.5
     networks:
       - public
     deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 10s
+        max_failure_ratio: 0
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
       labels:
         - traefik.enable=true
         - traefik.swarm.network=demo_public
