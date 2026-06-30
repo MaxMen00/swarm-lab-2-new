@@ -6,3 +6,4 @@
 redis_app_password.txt
 redis_app_username.txt
 stack-1.yml
+.vscode/launch.json
